@@ -44,7 +44,7 @@ COMMON_SKILLS = {
 }
 
 
-def _normalize(text: str) -> str:
+def _normalize(text: str):
     text = text.lower()
     text = re.sub(r"[^a-z0-9+\s\-]", " ", text)
     text = re.sub(r"\s+", " ", text).strip()
@@ -69,7 +69,7 @@ def _extract_skills(text: str):
     return found
 
 
-def score_resume(resume_text: str, job_text: str):
+def score_resume(resume_text, job_text):
     resume_skills = _extract_skills(resume_text)
     job_skills = _extract_skills(job_text)
 
