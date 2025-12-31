@@ -1,7 +1,12 @@
-from fastapi import FastAPI
-from pydantic import BaseModel
-
 from app.services.scoring_engine import score_resume
+from pydantic import BaseModel
+from fastapi import FastAPI
+from dotenv import load_dotenv
+import os
+
+# Load environment variables from .env
+load_dotenv()
+
 
 app = FastAPI(
     title="AI Resume Evaluator",
