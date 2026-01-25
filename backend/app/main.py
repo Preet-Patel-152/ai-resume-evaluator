@@ -9,8 +9,8 @@ from io import BytesIO
 import os
 from fastapi.middleware.cors import CORSMiddleware
 
-# Load env
-env_path = Path(__file__).resolve().parent / ".env"
+# Load env from backend/.env
+env_path = Path(__file__).resolve().parent.parent / ".env"
 load_dotenv(dotenv_path=env_path)
 
 # API Key setup
