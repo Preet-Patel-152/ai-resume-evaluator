@@ -1,24 +1,16 @@
 import json
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from pydantic import BaseModel
-from openai import OpenAI
 from dotenv import load_dotenv
-from pypdf import PdfReader
 from pathlib import Path
-from io import BytesIO
-import os
 from fastapi.middleware.cors import CORSMiddleware
+from .services.pdf_parser import extract_text_from_pdf_bytes
+from .services.llm import call_chat_model
 
 # Load env from backend/.env
 env_path = Path(__file__).resolve().parent.parent / ".env"
 load_dotenv(dotenv_path=env_path)
 
-# API Key setup
-api_key = os.getenv("OPENAI_API_KEY")
-if not api_key:
-    raise RuntimeError("OPENAI_API_KEY not set in .env")
-
-client = OpenAI(api_key=api_key)
 
 # Enable CORS for all origins (for development)
 app = FastAPI(
@@ -48,21 +40,6 @@ class ChatRequest(BaseModel):
 class MatchRequest(BaseModel):
     job_description: str
     resume_text: str
-
-
-# ---------------------------
-# Helper: Call OpenAI
-# ---------------------------
-def call_chat_model(messages, model="gpt-4.1-mini"):
-    try:
-        completion = client.chat.completions.create(
-            model=model,
-            messages=messages,
-            response_format={"type": "json_object"}
-        )
-        return completion.choices[0].message.content
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"OpenAI error: {str(e)}")
 
 
 # ---------------------------
@@ -153,26 +130,26 @@ def grade_resume(request: MatchRequest):
 # ---------------------------
 # PDF Extraction Helper
 # ---------------------------
-def extract_text_from_pdf_bytes(pdf_bytes: bytes) -> str:
-    try:
-        reader = PdfReader(BytesIO(pdf_bytes))
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Invalid PDF file: {e}")
+# def extract_text_from_pdf_bytes(pdf_bytes: bytes) -> str:
+#     try:
+#         reader = PdfReader(BytesIO(pdf_bytes))
+#     except Exception as e:
+#         raise HTTPException(status_code=400, detail=f"Invalid PDF file: {e}")
 
-    pages_text = []
-    for page in reader.pages:
-        page_text = page.extract_text() or ""
-        pages_text.append(page_text)
+#     pages_text = []
+#     for page in reader.pages:
+#         page_text = page.extract_text() or ""
+#         pages_text.append(page_text)
 
-    final_text = "\n".join(pages_text).strip()
+#     final_text = "\n".join(pages_text).strip()
 
-    if not final_text:
-        raise HTTPException(
-            status_code=400,
-            detail="PDF uploaded but no text could be extracted."
-        )
+#     if not final_text:
+#         raise HTTPException(
+#             status_code=400,
+#             detail="PDF uploaded but no text could be extracted."
+#         )
 
-    return final_text
+#     return final_text
 
 
 # ---------------------------
