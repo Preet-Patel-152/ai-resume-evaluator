@@ -1,11 +1,13 @@
-from .services.resume_grader import grade_resume_against_job
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from pathlib import Path
-from fastapi.middleware.cors import CORSMiddleware
+import os
+
 from .services.pdf_parser import extract_text_from_pdf_bytes
 from .services.llm import call_chat_model
+from .services.resume_grader import grade_resume_against_job
 
 # Load env from backend/.env
 env_path = Path(__file__).resolve().parent.parent / ".env"
