@@ -1,4 +1,4 @@
-import json
+from .services.resume_grader import grade_resume_against_job
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from pydantic import BaseModel
 from dotenv import load_dotenv
@@ -73,51 +73,6 @@ def chat(request: ChatRequest):
     return {"reply": reply}
 
 
-# ---------------------------
-# Resume Grading Logic
-# ---------------------------
-
-
-def grade_resume_against_job(job_description: str, resume_text: str) -> dict:
-    messages = [
-        {
-            "role": "system",
-            "content": (
-                "You are an expert recruiter and resume reviewer.\n"
-                "Given a job description and a resume, evaluate how well they match.\n"
-                "Respond ONLY in valid JSON with this exact schema:\n\n"
-                "{\n"
-                '  "match_score": number,            // 0-100\n'
-                '  "summary": string,               // short summary\n'
-                '  "strengths": [string, ...],      // 3-5 bullet points\n'
-                '  "gaps": [string, ...],           // 3-5 bullet points\n'
-                '  "improvements": [string, ...]    // concrete suggestions\n'
-                "}\n"
-            ),
-        },
-        {
-            "role": "user",
-            "content": (
-                f"JOB DESCRIPTION:\n{job_description}\n\n"
-                f"RESUME:\n{resume_text}"
-            ),
-        },
-    ]
-
-    raw = call_chat_model(messages)
-
-    try:
-        data = json.loads(raw)
-    except json.JSONDecodeError:
-        # fallback if model returns something slightly off
-        raise HTTPException(
-            status_code=500,
-            detail="Model returned invalid JSON. Try again or adjust the prompt."
-        )
-
-    return data
-
-
 @app.post("/grade_resume/")
 def grade_resume(request: MatchRequest):
     evaluation = grade_resume_against_job(
@@ -125,31 +80,6 @@ def grade_resume(request: MatchRequest):
         resume_text=request.resume_text,
     )
     return {"evaluation": evaluation}
-
-
-# ---------------------------
-# PDF Extraction Helper
-# ---------------------------
-# def extract_text_from_pdf_bytes(pdf_bytes: bytes) -> str:
-#     try:
-#         reader = PdfReader(BytesIO(pdf_bytes))
-#     except Exception as e:
-#         raise HTTPException(status_code=400, detail=f"Invalid PDF file: {e}")
-
-#     pages_text = []
-#     for page in reader.pages:
-#         page_text = page.extract_text() or ""
-#         pages_text.append(page_text)
-
-#     final_text = "\n".join(pages_text).strip()
-
-#     if not final_text:
-#         raise HTTPException(
-#             status_code=400,
-#             detail="PDF uploaded but no text could be extracted."
-#         )
-
-#     return final_text
 
 
 # ---------------------------
