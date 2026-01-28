@@ -44,37 +44,6 @@ class MatchRequest(BaseModel):
     resume_text: str
 
 
-# # ---------------------------
-# # Chatbot Logic
-# # ---------------------------
-# def get_bot_reply(user_message: str) -> str:
-#     lower_msg = user_message.lower()
-
-#     if any(greeting in lower_msg for greeting in ["hello", "hi", "hey"]):
-#         return "Hello! How can I assist you today?"
-
-#     messages = [
-#         {
-#             "role": "system",
-#             "content": (
-#                 "You are a top-level advisor. "
-#                 "Give clear, helpful, and concise answers."
-#             ),
-#         },
-#         {
-#             "role": "user",
-#             "content": user_message,
-#         },
-#     ]
-#     return call_chat_model(messages)
-
-
-# @app.post("/chat/")
-# def chat(request: ChatRequest):
-#     reply = get_bot_reply(request.message)
-#     return {"reply": reply}
-
-
 @app.post("/grade_resume/")
 def grade_resume(request: MatchRequest):
     evaluation = grade_resume_against_job(
