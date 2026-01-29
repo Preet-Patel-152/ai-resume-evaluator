@@ -66,10 +66,10 @@ async def grade_resume_pdf(
     resume_pdf: UploadFile = File(...),
 
 ):
-    log_event(
-        event="resume_analysis",
-        ip=request.client.host if request.client else None
-    )
+    # log_event(
+    #     event="resume_analysis",
+    #     ip=request.client.host if request.client else None
+    # )
 
     if resume_pdf.content_type != "application/pdf":
         raise HTTPException(
