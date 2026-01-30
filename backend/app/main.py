@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+from fastapi import BackgroundTasks, Request, FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
@@ -61,20 +61,22 @@ def grade_resume(request: MatchRequest):
 # ---------------------------
 @app.post("/grade_resume_pdf/")
 async def grade_resume_pdf(
+    background_tasks: BackgroundTasks,
     request: Request,
     job_description: str = Form(...),
-    resume_pdf: UploadFile = File(...),
-
+    resume_pdf: UploadFile = File(...)
 ):
-    # log_event(
-    #     event="resume_analysis",
-    #     ip=request.client.host if request.client else None
-    # )
+    # Run analytics safely in the background
+    background_tasks.add_task(
+        log_event,
+        "resume_analysis",
+        request.client.host if request.client else None
+    )
 
     if resume_pdf.content_type != "application/pdf":
         raise HTTPException(
             status_code=400,
-            detail=f"Unsupported file type: {resume_pdf.content_type}. Upload a PDF."
+            detail="Only PDF files are supported."
         )
 
     pdf_bytes = await resume_pdf.read()
@@ -84,5 +86,5 @@ async def grade_resume_pdf(
 
     return {
         "evaluation": evaluation,
-        "resume_preview": resume_text[:800],  # helpful for debugging
+        "resume_preview": resume_text[:800]
     }
