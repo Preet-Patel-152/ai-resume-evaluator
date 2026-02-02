@@ -17,7 +17,10 @@ def call_chat_model(messages, model: str = "gpt-4.1-mini") -> str:
         )
 
     try:
-        client = OpenAI(api_key=api_key)
+        client = OpenAI(
+            api_key=os.getenv("OPENAI_API_KEY"),
+            timeout=30
+        )
 
         completion = client.chat.completions.create(
             model=model,
