@@ -88,3 +88,12 @@ async def grade_resume_pdf(
         "evaluation": evaluation,
         "resume_preview": resume_text[:800]
     }
+
+# ---------------------------
+# ---------------------------
+# what i need to do for tommorow is mkae a rate limit for the api calls to openai
+# ---------------------------
+# next if make a check ofr if the pdf is too large then reject it
+# ---------------------------
+# next i can add a cash for the llm calls so if the same prompt is sent again it returns the cached response
+# ---------------------------
