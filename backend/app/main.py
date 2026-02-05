@@ -10,7 +10,15 @@ from .services.pdf_parser import extract_text_from_pdf_bytes
 # from .services.llm import call_chat_model
 from .services.resume_grader import grade_resume_against_job
 from .services.analytics import log_event
+from .middleware.rate_limiter import RateLimiter
 
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+ALLOWED_EXTENSIONS = {'.pdf'}
+
+rate_limiter = RateLimiter(
+    max_requests=10,      # 10 requests
+    window_seconds=3600   # per hour
+)
 
 # Load env from backend/.env
 env_path = Path(__file__).resolve().parent.parent / ".env"
@@ -66,6 +74,9 @@ async def grade_resume_pdf(
     job_description: str = Form(...),
     resume_pdf: UploadFile = File(...)
 ):
+
+    await rate_limiter.check_rate_limit(request)
+
     # Run analytics safely in the background
     background_tasks.add_task(
         log_event,
