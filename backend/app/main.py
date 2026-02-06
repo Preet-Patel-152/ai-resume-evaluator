@@ -3,7 +3,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from pathlib import Path
-from fastapi import Request
 import os
 
 from .services.pdf_parser import extract_text_from_pdf_bytes
@@ -14,6 +13,7 @@ from .middleware.rate_limiter import RateLimiter
 
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 ALLOWED_EXTENSIONS = {'.pdf'}
+MAX_RESUME_TEXT_LENGTH = 50_000  # ~10 pages
 
 rate_limiter = RateLimiter(
     max_requests=10,      # 10 requests
@@ -69,40 +69,96 @@ def grade_resume(request: MatchRequest):
 # ---------------------------
 @app.post("/grade_resume_pdf/")
 async def grade_resume_pdf(
-    background_tasks: BackgroundTasks,
     request: Request,
+    background_tasks: BackgroundTasks,
     job_description: str = Form(...),
     resume_pdf: UploadFile = File(...)
 ):
-
+    # ---------------------------
+    # Rate limiting
+    # ---------------------------
     await rate_limiter.check_rate_limit(request)
 
-    # Run analytics safely in the background
+    # ---------------------------
+    # Analytics (non-blocking)
+    # ---------------------------
     background_tasks.add_task(
         log_event,
         "resume_analysis",
         request.client.host if request.client else None
     )
 
-    if resume_pdf.content_type != "application/pdf":
+    # ---------------------------
+    # File extension validation
+    # ---------------------------
+    if not resume_pdf.filename:
+        raise HTTPException(status_code=400, detail="No filename provided")
+
+    file_ext = Path(resume_pdf.filename).suffix.lower()
+    if file_ext not in ALLOWED_EXTENSIONS:
         raise HTTPException(
             status_code=400,
-            detail="Only PDF files are supported."
+            detail=f"Invalid file type. Allowed: {', '.join(ALLOWED_EXTENSIONS)}"
         )
 
-    pdf_bytes = await resume_pdf.read()
+    # ---------------------------
+    # Streamed file-size check
+    # ---------------------------
+    file_size = 0
+    chunk_size = 1024 * 1024  # 1MB
+    chunks: list[bytes] = []
+
+    while True:
+        chunk = await resume_pdf.read(chunk_size)
+        if not chunk:
+            break
+
+        file_size += len(chunk)
+        if file_size > MAX_FILE_SIZE:
+            raise HTTPException(
+                status_code=413,
+                detail="File too large. Maximum size is 10MB."
+            )
+
+        chunks.append(chunk)
+
+    pdf_bytes = b"".join(chunks)
+
+    # ---------------------------
+    # Magic-byte validation
+    # ---------------------------
+    if not pdf_bytes.startswith(b"%PDF"):
+        raise HTTPException(
+            status_code=400,
+            detail="Uploaded file is not a valid PDF."
+        )
+
+    # ---------------------------
+    # PDF text extraction
+    # ---------------------------
     resume_text = extract_text_from_pdf_bytes(pdf_bytes)
 
-    evaluation = grade_resume_against_job(job_description, resume_text)
+    if len(resume_text) > MAX_RESUME_TEXT_LENGTH:
+        raise HTTPException(
+            status_code=400,
+            detail="Resume text too long. Please submit a concise resume."
+        )
+
+    # ---------------------------
+    # Resume grading
+    # ---------------------------
+    evaluation = grade_resume_against_job(
+        job_description,
+        resume_text
+    )
 
     return {
         "evaluation": evaluation,
         "resume_preview": resume_text[:800]
     }
 
+
 # ---------------------------
-# ---------------------------
-# what i need to do for tommorow is mkae a rate limit for the api calls to openai
 # ---------------------------
 # next if make a check ofr if the pdf is too large then reject it
 # ---------------------------
