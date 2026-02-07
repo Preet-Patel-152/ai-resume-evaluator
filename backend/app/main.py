@@ -11,6 +11,7 @@ from .services.resume_grader import grade_resume_against_job
 from .services.analytics import log_event
 from .middleware.rate_limiter import RateLimiter
 
+
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 ALLOWED_EXTENSIONS = {'.pdf'}
 MAX_RESUME_TEXT_LENGTH = 50_000  # ~10 pages
@@ -24,6 +25,21 @@ rate_limiter = RateLimiter(
 env_path = Path(__file__).resolve().parent.parent / ".env"
 load_dotenv(dotenv_path=env_path)
 
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
+
+if ENVIRONMENT == "development":
+    allowed_origins = [
+        "http://localhost:5500",   # VS Code Live Server
+        "http://127.0.0.1:5500",
+        "http://localhost:3000",   # React (future)
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:5501"
+    ]
+else:
+    allowed_origins = [
+        "https://your-frontend-domain.com",
+        "https://www.your-frontend-domain.com"
+    ]
 
 # Enable CORS for all origins (for development)
 app = FastAPI(
@@ -34,10 +50,10 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # dev only
+    allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["POST"],
+    allow_headers=["Content-Type"],
 )
 
 
@@ -79,14 +95,14 @@ async def grade_resume_pdf(
     # ---------------------------
     await rate_limiter.check_rate_limit(request)
 
-    # ---------------------------
+    # ------------------------------------------------------------------------------------------------------------
     # Analytics (non-blocking)
-    # ---------------------------
-    background_tasks.add_task(
-        log_event,
-        "resume_analysis",
-        request.client.host if request.client else None
-    )
+    # ------------------------------------------------------------------------------------------------------------
+    # background_tasks.add_task(
+    #     log_event,
+    #     "resume_analysis",
+    #     request.client.host if request.client else None
+    # )
 
     # ---------------------------
     # File extension validation
@@ -159,8 +175,6 @@ async def grade_resume_pdf(
 
 
 # ---------------------------
-# ---------------------------
-# next if make a check ofr if the pdf is too large then reject it
 # ---------------------------
 # next i can add a cash for the llm calls so if the same prompt is sent again it returns the cached response
 # ---------------------------
