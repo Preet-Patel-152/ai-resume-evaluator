@@ -12,3 +12,7 @@ def get_redis() -> Redis:
             decode_responses=True
         )
     return _redis
+
+
+# this file is for any direct redis interactions we want to do outside of the rate limiter,
+# like caching llm responses, or storing analytics data, etc.
