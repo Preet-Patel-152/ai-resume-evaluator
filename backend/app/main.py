@@ -9,16 +9,21 @@ from .services.pdf_parser import extract_text_from_pdf_bytes
 # from .services.llm import call_chat_model
 from .services.resume_grader import grade_resume_against_job
 from .services.analytics import log_event
-from .middleware.rate_limiter import RateLimiter
+# from .middleware.rate_limiter import RateLimiter
+from .middleware.redis_rate_limiter import RedisRateLimiter
+from .services.redis_client import get_redis
 
 
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 ALLOWED_EXTENSIONS = {'.pdf'}
 MAX_RESUME_TEXT_LENGTH = 50_000  # ~10 pages
 
-rate_limiter = RateLimiter(
-    max_requests=10,      # 10 requests
-    window_seconds=3600   # per hour
+redis = get_redis()
+
+rate_limiter = RedisRateLimiter(
+    redis=redis,
+    max_requests=10,
+    window_seconds=3600
 )
 
 # Load env from backend/.env
