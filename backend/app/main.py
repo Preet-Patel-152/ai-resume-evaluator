@@ -186,3 +186,5 @@ async def grade_resume_pdf(
 # need to get this done and uploaded before i start working on the frontend, so that i can test the caching functionality with the frontend as well
 # ----------------------------
 # finniched up the rate limiting
+# -----------------------------
+# once i add this im add a sign in page to get user count and give opin if they don't want to sign up just makea guest classS
