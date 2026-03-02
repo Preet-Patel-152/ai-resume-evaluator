@@ -9,12 +9,34 @@ This module is deterministic and explainable.
 """
 
 
-# Small starter skill list (we can expand later)
 COMMON_SKILLS = {
-    "python", "java", "javascript", "typescript", "sql", "html", "css",
-    "react", "node", "fastapi", "flask", "django", "git", "github",
-    "docker", "aws", "rest", "api", "postgresql", "mongodb",
-    "pytest", "unit testing", "oop", "data structures", "algorithms"
+    # Languages
+    "python", "java", "javascript", "typescript", "c++", "go", "rust",
+    "ruby", "php", "swift", "kotlin", "scala", "r", "matlab", "bash",
+
+    # Web frontend
+    "html", "css", "react", "angular", "vue", "tailwind", "bootstrap", "sass",
+
+    # Web backend
+    "node", "express", "fastapi", "flask", "django", "spring", "rails", "laravel",
+
+    # Databases
+    "sql", "mysql", "postgresql", "mongodb", "sqlite", "redis",
+    "elasticsearch", "cassandra", "dynamodb",
+
+    # Cloud & DevOps
+    "aws", "azure", "gcp", "docker", "kubernetes", "terraform",
+    "jenkins", "linux", "git", "github", "gitlab",
+
+    # Data & ML
+    "machine learning", "deep learning", "nlp", "tensorflow", "pytorch",
+    "pandas", "numpy", "scikit", "computer vision", "data science",
+    "data analysis", "tableau", "power bi",
+
+    # Practices & concepts
+    "rest", "api", "graphql", "microservices", "agile", "scrum",
+    "oop", "data structures", "algorithms", "unit testing",
+    "pytest", "tdd", "devops", "security",
 }
 
 
