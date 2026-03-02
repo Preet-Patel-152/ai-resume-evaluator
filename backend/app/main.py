@@ -1,5 +1,6 @@
 from fastapi import BackgroundTasks, Request, FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from pathlib import Path
@@ -12,6 +13,7 @@ load_dotenv(dotenv_path=env_path)
 from .services.pdf_parser import extract_text_from_pdf_bytes
 # from .services.llm import call_chat_model
 from .services.resume_grader import grade_resume_against_job
+from .services.scoring_engine import score_resume
 from .services.analytics import log_event
 # from .middleware.rate_limiter import RateLimiter
 from .middleware.redis_rate_limiter import RedisRateLimiter
@@ -29,6 +31,13 @@ rate_limiter = RedisRateLimiter(
     max_requests=10,
     window_seconds=3600
 )
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    if not os.getenv("OPENAI_API_KEY"):
+        raise RuntimeError("OPENAI_API_KEY is not set. Add it to your .env file.")
+    yield
+
 
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 
@@ -50,7 +59,8 @@ else:
 app = FastAPI(
     title="Resume AI Service",
     version="1.0.0",
-    description="Chat + Resume Grading + PDF Upload"
+    description="Chat + Resume Grading + PDF Upload",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -77,12 +87,14 @@ class MatchRequest(BaseModel):
 
 
 @app.post("/grade_resume/")
-def grade_resume(request: MatchRequest):
+async def grade_resume(http_request: Request, request: MatchRequest):
+    await rate_limiter.check_rate_limit(http_request)
     evaluation = grade_resume_against_job(
         job_description=request.job_description,
         resume_text=request.resume_text,
     )
-    return {"evaluation": evaluation}
+    keyword_score = score_resume(request.resume_text, request.job_description)
+    return {"evaluation": evaluation, "keyword_score": keyword_score}
 
 
 # ---------------------------
@@ -100,14 +112,14 @@ async def grade_resume_pdf(
     # ---------------------------
     await rate_limiter.check_rate_limit(request)
 
-    # ------------------------------------------------------------------------------------------------------------
+    # ---------------------------
     # Analytics (non-blocking)
-    # ------------------------------------------------------------------------------------------------------------
-    # background_tasks.add_task(
-    #     log_event,
-    #     "resume_analysis",
-    #     request.client.host if request.client else None
-    # )
+    # ---------------------------
+    background_tasks.add_task(
+        log_event,
+        "resume_analysis",
+        request.client.host if request.client else None
+    )
 
     # ---------------------------
     # File extension validation
@@ -172,9 +184,11 @@ async def grade_resume_pdf(
         job_description,
         resume_text
     )
+    keyword_score = score_resume(resume_text, job_description)
 
     return {
         "evaluation": evaluation,
+        "keyword_score": keyword_score,
         "resume_preview": resume_text[:800]
     }
 
