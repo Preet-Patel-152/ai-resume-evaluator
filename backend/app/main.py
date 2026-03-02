@@ -5,6 +5,10 @@ from dotenv import load_dotenv
 from pathlib import Path
 import os
 
+# Load env from backend/.env FIRST, before any service that reads env vars
+env_path = Path(__file__).resolve().parent.parent / ".env"
+load_dotenv(dotenv_path=env_path)
+
 from .services.pdf_parser import extract_text_from_pdf_bytes
 # from .services.llm import call_chat_model
 from .services.resume_grader import grade_resume_against_job
@@ -25,10 +29,6 @@ rate_limiter = RedisRateLimiter(
     max_requests=10,
     window_seconds=3600
 )
-
-# Load env from backend/.env
-env_path = Path(__file__).resolve().parent.parent / ".env"
-load_dotenv(dotenv_path=env_path)
 
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 
