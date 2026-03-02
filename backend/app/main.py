@@ -67,18 +67,19 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["POST"],
+    allow_methods=["GET", "POST"],
     allow_headers=["Content-Type"],
 )
+
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
 
 
 # ---------------------------
 # Pydantic Models
 # ---------------------------
-
-
-class ChatRequest(BaseModel):
-    message: str
 
 
 class MatchRequest(BaseModel):
