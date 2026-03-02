@@ -4,6 +4,8 @@ from contextlib import asynccontextmanager
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from pathlib import Path
+import hashlib
+import json
 import os
 
 # Load env from backend/.env FIRST, before any service that reads env vars
@@ -90,10 +92,29 @@ class MatchRequest(BaseModel):
 @app.post("/grade_resume/")
 async def grade_resume(http_request: Request, request: MatchRequest):
     await rate_limiter.check_rate_limit(http_request)
-    evaluation = grade_resume_against_job(
-        job_description=request.job_description,
-        resume_text=request.resume_text,
-    )
+
+    cache_key = "llm_cache:" + hashlib.md5(
+        (request.job_description + "||" + request.resume_text).encode()
+    ).hexdigest()
+
+    evaluation = None
+    try:
+        cached = await redis.get(cache_key)
+        if cached:
+            evaluation = json.loads(cached)
+    except Exception:
+        pass
+
+    if evaluation is None:
+        evaluation = grade_resume_against_job(
+            job_description=request.job_description,
+            resume_text=request.resume_text,
+        )
+        try:
+            await redis.set(cache_key, json.dumps(evaluation), ex=86400)
+        except Exception:
+            pass
+
     keyword_score = score_resume(request.resume_text, request.job_description)
     return {"evaluation": evaluation, "keyword_score": keyword_score}
 
@@ -179,12 +200,27 @@ async def grade_resume_pdf(
         )
 
     # ---------------------------
-    # Resume grading
+    # Resume grading (with cache)
     # ---------------------------
-    evaluation = grade_resume_against_job(
-        job_description,
-        resume_text
-    )
+    cache_key = "llm_cache:" + hashlib.md5(
+        (job_description + "||" + resume_text).encode()
+    ).hexdigest()
+
+    evaluation = None
+    try:
+        cached = await redis.get(cache_key)
+        if cached:
+            evaluation = json.loads(cached)
+    except Exception:
+        pass
+
+    if evaluation is None:
+        evaluation = grade_resume_against_job(job_description, resume_text)
+        try:
+            await redis.set(cache_key, json.dumps(evaluation), ex=86400)
+        except Exception:
+            pass
+
     keyword_score = score_resume(resume_text, job_description)
 
     return {
