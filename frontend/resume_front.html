@@ -16,7 +16,7 @@
             --shadow: 0 14px 40px rgba(0, 0, 0, 0.08);
             --ring: 0 0 0 4px rgba(99, 102, 241, 0.18);
             --primary: #6366f1;
-            --primaryHover: #4f46e5;
+            --primary-hover: #4f46e5;
             --radius: 14px;
         }
 
@@ -27,42 +27,57 @@
 
         body {
             margin: 0;
-            background: var(--bg);
             color: var(--text);
+            background-image: url('../images/a2f1463e-29de-494e-8398-d32a3e22f171.jpg');
+            background-size: cover;
+            background-attachment: fixed;
         }
 
         .container {
-            max-width: 860px;
-            margin: 64px auto;
-            padding: 24px;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 48px 24px 72px;
         }
 
         header {
-            margin-bottom: 20px;
+            margin-bottom: 28px;
         }
 
         h1 {
             margin: 0 0 8px;
-            font-size: 30px;
+            font-size: 32px;
             letter-spacing: -0.02em;
+            color: #fff;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
         }
 
         .subtitle {
             margin: 0;
-            color: var(--muted);
+            color: rgba(255, 255, 255, 0.88);
             line-height: 1.6;
-            max-width: 70ch;
+            font-size: 15px;
         }
 
+        /* ---- Cards ---- */
         .card {
             background: var(--card);
             border: 1px solid var(--border);
             border-radius: var(--radius);
-            padding: 22px;
+            padding: 24px;
             box-shadow: var(--shadow);
             margin-top: 18px;
         }
 
+        .card-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--muted);
+            margin: 0 0 16px;
+        }
+
+        /* ---- Form ---- */
         .field {
             margin-bottom: 16px;
         }
@@ -87,7 +102,7 @@
         input[type="file"],
         textarea {
             width: 100%;
-            padding: 12px 12px;
+            padding: 12px;
             border-radius: 10px;
             border: 1px solid var(--border);
             background: #fff;
@@ -96,9 +111,9 @@
         }
 
         textarea {
-            min-height: 190px;
+            min-height: 160px;
             resize: vertical;
-            line-height: 1.45;
+            line-height: 1.5;
         }
 
         input:focus,
@@ -117,11 +132,18 @@
             margin-top: 8px;
         }
 
+        .file-name {
+            font-size: 13px;
+            color: var(--muted);
+            margin-top: 6px;
+        }
+
+        /* ---- Buttons ---- */
         button {
             background: var(--primary);
             color: white;
             border: none;
-            padding: 12px 18px;
+            padding: 12px 20px;
             border-radius: 10px;
             font-size: 15px;
             font-weight: 700;
@@ -130,7 +152,7 @@
         }
 
         button:hover {
-            background: var(--primaryHover);
+            background: var(--primary-hover);
         }
 
         button:active {
@@ -142,31 +164,20 @@
             cursor: not-allowed;
         }
 
-        .file-name {
+        .btn-outline {
+            background: transparent;
+            color: var(--primary);
+            border: 1.5px solid var(--primary);
+            padding: 8px 14px;
             font-size: 13px;
-            color: var(--muted);
         }
 
-        .result-title {
-            font-size: 16px;
-            font-weight: 800;
-            margin: 0 0 10px;
-            letter-spacing: -0.01em;
+        .btn-outline:hover {
+            background: rgba(99, 102, 241, 0.07);
         }
 
-        .result-box {
-            background: #fbfbfd;
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 16px;
-            min-height: 140px;
-            white-space: pre-wrap;
-            font-size: 14px;
-            line-height: 1.5;
-        }
-
+        /* ---- Status ---- */
         .status {
-            margin-top: 12px;
             font-size: 13px;
             color: var(--muted);
         }
@@ -179,15 +190,255 @@
             color: #065f46;
         }
 
+        /* ---- Results section ---- */
+        #results-section {
+            display: none;
+        }
+
+        /* Score card */
+        .score-card {
+            display: flex;
+            gap: 28px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .gauge-wrap {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            flex-shrink: 0;
+        }
+
+        .gauge-wrap svg {
+            transform: rotate(-90deg);
+        }
+
+        .gauge-text {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .gauge-pct {
+            font-size: 26px;
+            font-weight: 800;
+            line-height: 1;
+            letter-spacing: -0.03em;
+        }
+
+        .gauge-sublabel {
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 3px;
+            font-weight: 500;
+        }
+
+        .score-info {
+            flex: 1;
+            min-width: 180px;
+        }
+
+        .score-verdict {
+            font-size: 20px;
+            font-weight: 800;
+            margin: 0 0 6px;
+            letter-spacing: -0.01em;
+        }
+
+        .score-summary-text {
+            margin: 0;
+            color: #374151;
+            font-size: 14px;
+            line-height: 1.65;
+        }
+
+        /* Skill chips */
+        .skills-grid {
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+
+        .skills-col {
+            flex: 1;
+            min-width: 180px;
+        }
+
+        .skills-col h3 {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin: 0 0 10px;
+        }
+
+        .skills-col.matched h3 {
+            color: #065f46;
+        }
+
+        .skills-col.missing h3 {
+            color: #991b1b;
+        }
+
+        .chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .chip {
+            display: inline-block;
+            padding: 4px 11px;
+            border-radius: 100px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .chip-green {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .chip-red {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .chip-empty {
+            color: var(--muted);
+            font-size: 13px;
+            font-style: italic;
+        }
+
+        /* Detail grid */
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .detail-col h3 {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin: 0 0 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid;
+        }
+
+        .detail-col.strengths h3 {
+            color: #065f46;
+            border-color: #10b981;
+        }
+
+        .detail-col.gaps h3 {
+            color: #991b1b;
+            border-color: #ef4444;
+        }
+
+        .detail-col.improvements h3 {
+            color: #1e40af;
+            border-color: #6366f1;
+        }
+
+        .detail-col ul {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 9px;
+        }
+
+        .detail-col ul li {
+            font-size: 13px;
+            line-height: 1.55;
+            color: #374151;
+            padding-left: 16px;
+            position: relative;
+        }
+
+        .detail-col ul li::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            font-weight: 800;
+        }
+
+        .strengths li::before {
+            color: #10b981;
+        }
+
+        .gaps li::before {
+            color: #ef4444;
+        }
+
+        .improvements li::before {
+            color: #6366f1;
+        }
+
         .footer-note {
-            margin-top: 10px;
+            margin-top: 14px;
             font-size: 12px;
             color: var(--muted);
         }
 
-        @media (max-width: 520px) {
-            .container {
-                margin: 36px auto;
+        /* ---- Skeleton loader ---- */
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e4e4e4 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 8px;
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: 200% 0;
+            }
+
+            100% {
+                background-position: -200% 0;
+            }
+        }
+
+        .sk-line {
+            height: 13px;
+            margin-bottom: 10px;
+        }
+
+        .sk-short {
+            width: 35%;
+        }
+
+        .sk-med {
+            width: 65%;
+        }
+
+        .sk-full {
+            width: 100%;
+        }
+
+        .sk-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        /* ---- Responsive ---- */
+        @media (max-width: 680px) {
+            .details-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .score-card {
+                flex-direction: column;
+                align-items: flex-start;
             }
 
             h1 {
@@ -197,16 +448,15 @@
     </style>
 </head>
 
-<body style="background-image: url('../images/a2f1463e-29de-494e-8398-d32a3e22f171.jpg'); background-size: cover;">
+<body>
     <div class="container">
+
         <header>
-            <h1 style="color: white;">AI Resume Analyzer</h1>
-            <p class="subtitle" style="color: white;">
-                Upload your resume and paste a job description to get an AI-powered match analysis.
-            </p>
+            <h1>AI Resume Analyzer</h1>
+            <p class="subtitle">Upload your resume and paste a job description to get an AI-powered match analysis.</p>
         </header>
 
-        <!-- Form -->
+        <!-- Form card -->
         <div class="card">
             <form id="analyze-form" enctype="multipart/form-data">
                 <div class="field">
@@ -233,56 +483,239 @@
             </form>
         </div>
 
-        <!-- Results -->
-        <div class="card">
-            <div class="result-title">Analysis Result</div>
-            <div id="result-box" class="result-box" aria-live="polite">
-                No analysis yet.
+        <!-- Results section (hidden until first analysis) -->
+        <div id="results-section">
+
+            <!-- Skeleton loader -->
+            <div id="skeleton" style="display:none;">
+                <div class="card">
+                    <div style="display:flex; gap:28px; align-items:center;">
+                        <div class="skeleton sk-circle"></div>
+                        <div style="flex:1;">
+                            <div class="skeleton sk-line sk-short" style="height:20px; margin-bottom:14px;"></div>
+                            <div class="skeleton sk-line sk-full"></div>
+                            <div class="skeleton sk-line sk-med"></div>
+                            <div class="skeleton sk-line sk-full"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="skeleton sk-line sk-short" style="height:16px; margin-bottom:16px;"></div>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                        <div class="skeleton" style="width:72px; height:26px; border-radius:100px;"></div>
+                        <div class="skeleton" style="width:90px; height:26px; border-radius:100px;"></div>
+                        <div class="skeleton" style="width:60px; height:26px; border-radius:100px;"></div>
+                        <div class="skeleton" style="width:84px; height:26px; border-radius:100px;"></div>
+                        <div class="skeleton" style="width:68px; height:26px; border-radius:100px;"></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px;">
+                        <div>
+                            <div class="skeleton sk-line sk-short" style="height:15px; margin-bottom:14px;"></div>
+                            <div class="skeleton sk-line sk-full"></div>
+                            <div class="skeleton sk-line sk-med"></div>
+                            <div class="skeleton sk-line sk-full"></div>
+                        </div>
+                        <div>
+                            <div class="skeleton sk-line sk-short" style="height:15px; margin-bottom:14px;"></div>
+                            <div class="skeleton sk-line sk-full"></div>
+                            <div class="skeleton sk-line sk-med"></div>
+                            <div class="skeleton sk-line sk-full"></div>
+                        </div>
+                        <div>
+                            <div class="skeleton sk-line sk-short" style="height:15px; margin-bottom:14px;"></div>
+                            <div class="skeleton sk-line sk-full"></div>
+                            <div class="skeleton sk-line sk-med"></div>
+                            <div class="skeleton sk-line sk-full"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="footer-note">
-                Results are advisory. Always tailor your resume for each role.
+
+            <!-- Actual results -->
+            <div id="actual-results" style="display:none;">
+
+                <!-- Score + summary -->
+                <div class="card">
+                    <div class="score-card">
+                        <div class="gauge-wrap">
+                            <svg width="120" height="120" viewBox="0 0 120 120">
+                                <circle cx="60" cy="60" r="54" fill="none" stroke="#e5e7eb" stroke-width="9" />
+                                <circle id="gauge-arc" cx="60" cy="60" r="54" fill="none" stroke="#6366f1"
+                                    stroke-width="9" stroke-linecap="round" stroke-dasharray="339.3"
+                                    stroke-dashoffset="339.3" />
+                            </svg>
+                            <div class="gauge-text">
+                                <span id="gauge-pct" class="gauge-pct">0%</span>
+                                <span class="gauge-sublabel">Match</span>
+                            </div>
+                        </div>
+
+                        <div class="score-info">
+                            <div id="score-verdict" class="score-verdict"></div>
+                            <p id="score-summary" class="score-summary-text"></p>
+                        </div>
+
+                        <button class="btn-outline" id="copy-btn">Copy Results</button>
+                    </div>
+                </div>
+
+                <!-- Keyword skills -->
+                <div class="card">
+                    <div class="card-label">Keyword Skill Match</div>
+                    <div class="skills-grid">
+                        <div class="skills-col matched">
+                            <h3>Matched Skills</h3>
+                            <div id="matched-chips" class="chips"></div>
+                        </div>
+                        <div class="skills-col missing">
+                            <h3>Missing Skills</h3>
+                            <div id="missing-chips" class="chips"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Strengths / Gaps / Improvements -->
+                <div class="card">
+                    <div class="details-grid">
+                        <div class="detail-col strengths">
+                            <h3>Strengths</h3>
+                            <ul id="strengths-list"></ul>
+                        </div>
+                        <div class="detail-col gaps">
+                            <h3>Gaps</h3>
+                            <ul id="gaps-list"></ul>
+                        </div>
+                        <div class="detail-col improvements">
+                            <h3>Improvements</h3>
+                            <ul id="improvements-list"></ul>
+                        </div>
+                    </div>
+                    <div class="footer-note">Results are advisory. Always tailor your resume for each role.</div>
+                </div>
+
             </div>
         </div>
     </div>
 
     <script>
-        // Small UX improvements (optional but nice)
-        const form = document.getElementById("analyze-form");
-        const resume = document.getElementById("resume");
-        const fileName = document.getElementById("file-name");
-        const btn = document.getElementById("submit-btn");
-        const status = document.getElementById("status");
-        const resultBox = document.getElementById("result-box");
+        const CIRCUMFERENCE = 2 * Math.PI * 54; // 339.3
 
-        resume.addEventListener("change", () => {
-            fileName.textContent = resume.files?.[0]?.name || "No file selected.";
+        const form = document.getElementById("analyze-form");
+        const resumeInput = document.getElementById("resume");
+        const fileNameEl = document.getElementById("file-name");
+        const btn = document.getElementById("submit-btn");
+        const statusEl = document.getElementById("status");
+        const copyBtn = document.getElementById("copy-btn");
+
+        let lastData = null;
+
+        resumeInput.addEventListener("change", () => {
+            fileNameEl.textContent = resumeInput.files?.[0]?.name || "No file selected.";
+        });
+
+        function scoreColor(score) {
+            if (score >= 70) return "#10b981";
+            if (score >= 40) return "#f59e0b";
+            return "#ef4444";
+        }
+
+        function scoreVerdict(score) {
+            if (score >= 80) return "Strong Match";
+            if (score >= 60) return "Good Match";
+            if (score >= 40) return "Moderate Match";
+            return "Weak Match";
+        }
+
+        function animateGauge(score) {
+            const arc = document.getElementById("gauge-arc");
+            const pctEl = document.getElementById("gauge-pct");
+            const color = scoreColor(score);
+
+            arc.style.stroke = color;
+            document.getElementById("score-verdict").style.color = color;
+
+            let current = 0;
+            const step = score / 45;
+            const timer = setInterval(() => {
+                current = Math.min(current + step, score);
+                arc.style.strokeDashoffset = CIRCUMFERENCE * (1 - current / 100);
+                pctEl.textContent = Math.round(current) + "%";
+                pctEl.style.color = color;
+                if (current >= score) clearInterval(timer);
+            }, 16);
+        }
+
+        function renderList(id, items) {
+            document.getElementById(id).innerHTML =
+                items.map(item => `<li>${item}</li>`).join("");
+        }
+
+        function renderChips(id, items, cls) {
+            const el = document.getElementById(id);
+            if (!items || items.length === 0) {
+                el.innerHTML = `<span class="chip-empty">None detected</span>`;
+                return;
+            }
+            el.innerHTML = items.map(s => `<span class="chip ${cls}">${s}</span>`).join("");
+        }
+
+        copyBtn.addEventListener("click", () => {
+            if (!lastData) return;
+            const e = lastData.evaluation;
+            const k = lastData.keyword_score;
+            const lines = [
+                "AI Resume Match Analysis",
+                "=".repeat(26),
+                "",
+                `Match Score: ${e.match_score}% — ${scoreVerdict(e.match_score)}`,
+                `Summary: ${e.summary}`,
+                "",
+                `Matched Skills: ${k.matched_skills.join(", ") || "none"}`,
+                `Missing Skills: ${k.missing_skills.join(", ") || "none"}`,
+                "",
+                "Strengths:",
+                ...e.strengths.map(s => `  • ${s}`),
+                "",
+                "Gaps:",
+                ...e.gaps.map(g => `  • ${g}`),
+                "",
+                "Improvements:",
+                ...e.improvements.map(i => `  • ${i}`),
+            ];
+            navigator.clipboard.writeText(lines.join("\n")).then(() => {
+                copyBtn.textContent = "Copied!";
+                setTimeout(() => copyBtn.textContent = "Copy Results", 2000);
+            });
         });
 
         form.addEventListener("submit", async (e) => {
             e.preventDefault();
 
-            // Basic validation UI
-            if (!resume.files || !resume.files[0]) {
-                status.textContent = "Please upload a PDF resume.";
-                status.className = "status error";
+            if (!resumeInput.files?.[0]) {
+                statusEl.textContent = "Please upload a PDF resume.";
+                statusEl.className = "status error";
                 return;
             }
             const jobText = document.getElementById("job-text").value.trim();
             if (!jobText) {
-                status.textContent = "Please paste a job description.";
-                status.className = "status error";
+                statusEl.textContent = "Please paste a job description.";
+                statusEl.className = "status error";
                 return;
             }
 
-            // Loading state
+            // Show skeleton, hide previous results
             btn.disabled = true;
-            btn.textContent = "Analyzing...";
-            status.textContent = "Working…";
-            status.className = "status";
+            btn.textContent = "Analyzing…";
+            statusEl.textContent = "Working…";
+            statusEl.className = "status";
+            document.getElementById("results-section").style.display = "block";
+            document.getElementById("skeleton").style.display = "block";
+            document.getElementById("actual-results").style.display = "none";
 
-            // Prepare form data
             const formData = new FormData();
-            formData.append("resume_pdf", resume.files[0]);
+            formData.append("resume_pdf", resumeInput.files[0]);
             formData.append("job_description", jobText);
 
             try {
@@ -290,42 +723,41 @@
                     method: "POST",
                     body: formData
                 });
+
                 if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.detail || "API error");
+                    const err = await response.json();
+                    throw new Error(err.detail?.error || err.detail || "API error");
                 }
+
                 const data = await response.json();
-                const evalResult = data.evaluation;
-                // Format the result for display
-                let resultText = "";
+                lastData = data;
+                const ev = data.evaluation;
+                const ks = data.keyword_score;
 
-                resultText += `Match Score: ${evalResult.match_score}%\n\n`;
-                resultText += `Summary:\n${evalResult.summary}\n\n`;
+                // Score gauge
+                animateGauge(ev.match_score);
+                document.getElementById("score-verdict").textContent = scoreVerdict(ev.match_score);
+                document.getElementById("score-summary").textContent = ev.summary;
 
-                resultText += "Strengths:\n";
-                evalResult.strengths.forEach(s => {
-                    resultText += `• ${s}\n`;
-                });
+                // Keyword chips
+                renderChips("matched-chips", ks.matched_skills, "chip-green");
+                renderChips("missing-chips", ks.missing_skills, "chip-red");
 
-                resultText += "\nGaps:\n";
-                evalResult.gaps.forEach(g => {
-                    resultText += `• ${g}\n`;
-                });
+                // Detail lists
+                renderList("strengths-list", ev.strengths);
+                renderList("gaps-list", ev.gaps);
+                renderList("improvements-list", ev.improvements);
 
-                resultText += "\nImprovements:\n";
-                evalResult.improvements.forEach(i => {
-                    resultText += `• ${i}\n`;
-                });
+                // Swap skeleton → results
+                document.getElementById("skeleton").style.display = "none";
+                document.getElementById("actual-results").style.display = "block";
+                statusEl.textContent = "Done.";
+                statusEl.className = "status success";
 
-                resultBox.textContent = resultText;
-
-                resultBox.textContent = resultText;
-                status.textContent = "Done.";
-                status.className = "status success";
             } catch (err) {
-                resultBox.textContent = "";
-                status.textContent = "Error: " + err.message;
-                status.className = "status error";
+                document.getElementById("skeleton").style.display = "none";
+                statusEl.textContent = "Error: " + err.message;
+                statusEl.className = "status error";
             } finally {
                 btn.disabled = false;
                 btn.textContent = "Analyze Resume";
