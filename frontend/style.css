@@ -19,7 +19,7 @@
 body {
     margin: 0;
     color: var(--text);
-    background-image: url('../images/a2f1463e-29de-494e-8398-d32a3e22f171.jpg');
+    background-image: url('images/a2f1463e-29de-494e-8398-d32a3e22f171.jpg');
     background-size: cover;
     background-attachment: fixed;
 }
