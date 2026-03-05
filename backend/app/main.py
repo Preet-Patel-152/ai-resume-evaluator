@@ -79,6 +79,24 @@ def health():
     return {"status": "ok"}
 
 
+@app.get("/stats")
+async def get_stats():
+    try:
+        total = await redis.get("stats:total_requests")
+        unique = await redis.pfcount("stats:unique_ips")
+        per_ip = await redis.hgetall("stats:per_ip")
+    except Exception:
+        raise HTTPException(status_code=503, detail="Stats unavailable")
+
+    top_users = sorted(per_ip.items(), key=lambda x: int(x[1]), reverse=True)
+
+    return {
+        "total_requests": int(total) if total else 0,
+        "unique_visitors": unique,
+        "top_users": [{"id": k, "uses": int(v)} for k, v in top_users],
+    }
+
+
 # ---------------------------
 # Pydantic Models
 # ---------------------------
@@ -140,7 +158,8 @@ async def grade_resume_pdf(
     background_tasks.add_task(
         log_event,
         "resume_analysis",
-        request.client.host if request.client else None
+        request.client.host if request.client else None,
+        redis,
     )
 
     # ---------------------------

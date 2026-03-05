@@ -1,25 +1,25 @@
-from datetime import datetime
-from pathlib import Path
-
-# Write logs into backend/logs/usage.log (clean + predictable)
-LOG_DIR = Path(__file__).resolve().parents[2] / "logs"
-LOG_FILE = LOG_DIR / "usage.log"
+import hashlib
+import os
 
 
-def log_event(event: str, ip: str | None = None):
+def _hash_ip(ip: str) -> str:
+    salt = os.getenv("IP_HASH_SALT", "")
+    return hashlib.sha256(f"{salt}{ip}".encode()).hexdigest()[:16]
+
+
+async def log_event(event: str, ip: str | None, redis) -> None:
     """
-    Append a line like:
-    2026-01-29T02:20:26.483679 | resume_analysis | ip=127.0.0.1
+    Track usage stats in Redis. Never stores raw IPs.
+    - stats:total_requests     → total grader uses (int)
+    - stats:unique_ips         → approximate unique visitors (HyperLogLog)
+    - stats:per_ip             → Hash of { ip_hash: count }
     """
     try:
-        LOG_DIR.mkdir(parents=True, exist_ok=True)
+        ip_hash = _hash_ip(ip) if ip else "unknown"
 
-        timestamp = datetime.utcnow().isoformat()
-        ip_part = f" | ip={ip}" if ip else ""
-        line = f"{timestamp} | {event}{ip_part}\n"
-
-        with open(LOG_FILE, "a", encoding="utf-8") as f:
-            f.write(line)
+        await redis.incr("stats:total_requests")
+        await redis.pfadd("stats:unique_ips", ip_hash)
+        await redis.hincrby("stats:per_ip", ip_hash, 1)
     except Exception:
         # analytics must NEVER crash the app
         return
