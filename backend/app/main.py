@@ -1,5 +1,7 @@
 from fastapi import BackgroundTasks, Request, FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 from pydantic import BaseModel
 from dotenv import load_dotenv
@@ -13,26 +15,28 @@ env_path = Path(__file__).resolve().parent.parent / ".env"
 load_dotenv(dotenv_path=env_path)
 
 from .services.pdf_parser import extract_text_from_pdf_bytes
-# from .services.llm import call_chat_model
 from .services.resume_grader import grade_resume_against_job
 from .services.scoring_engine import score_resume
 from .services.analytics import log_event
-# from .middleware.rate_limiter import RateLimiter
 from .middleware.redis_rate_limiter import RedisRateLimiter
 from .services.redis_client import get_redis
 
 
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 ALLOWED_EXTENSIONS = {'.pdf'}
-MAX_RESUME_TEXT_LENGTH = 50_000  # ~10 pages
+MAX_RESUME_TEXT_LENGTH = 50_000   # ~10 pages
+MAX_JOB_DESC_LENGTH = 20_000
+
+FRONTEND_DIR = Path(__file__).resolve().parents[2] / "frontend"
 
 redis = get_redis()
 
 rate_limiter = RedisRateLimiter(
     redis=redis,
-    max_requests=10,
-    window_seconds=3600
+    max_requests=int(os.getenv("RATE_LIMIT_MAX", "10")),
+    window_seconds=int(os.getenv("RATE_LIMIT_WINDOW", "3600")),
 )
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -45,23 +49,20 @@ ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 
 if ENVIRONMENT == "development":
     allowed_origins = [
-        "http://localhost:5500",   # VS Code Live Server
+        "http://localhost:5500",
         "http://127.0.0.1:5500",
-        "http://localhost:3000",   # React (future)
+        "http://localhost:3000",
         "http://127.0.0.1:3000",
-        "http://127.0.0.1:5501"
+        "http://127.0.0.1:5501",
     ]
 else:
-    allowed_origins = [
-        "https://your-frontend-domain.com",
-        "https://www.your-frontend-domain.com"
-    ]
+    origin = os.getenv("ALLOWED_ORIGIN", "")
+    allowed_origins = [origin] if origin else []
 
-# Enable CORS for all origins (for development)
 app = FastAPI(
     title="Resume AI Service",
     version="1.0.0",
-    description="Chat + Resume Grading + PDF Upload",
+    description="Resume Grading + PDF Upload",
     lifespan=lifespan,
 )
 
@@ -73,6 +74,19 @@ app.add_middleware(
     allow_headers=["Content-Type"],
 )
 
+
+# ---------------------------
+# Frontend
+# ---------------------------
+
+@app.get("/")
+def serve_frontend():
+    return FileResponse(FRONTEND_DIR / "resume_front.html")
+
+
+# ---------------------------
+# Health + Stats
+# ---------------------------
 
 @app.get("/health")
 def health():
@@ -101,7 +115,6 @@ async def get_stats():
 # Pydantic Models
 # ---------------------------
 
-
 class MatchRequest(BaseModel):
     job_description: str
     resume_text: str
@@ -110,6 +123,9 @@ class MatchRequest(BaseModel):
 @app.post("/grade_resume/")
 async def grade_resume(http_request: Request, request: MatchRequest):
     await rate_limiter.check_rate_limit(http_request)
+
+    if len(request.job_description) > MAX_JOB_DESC_LENGTH:
+        raise HTTPException(status_code=400, detail="Job description too long.")
 
     cache_key = "llm_cache:" + hashlib.md5(
         (request.job_description + "||" + request.resume_text).encode()
@@ -140,21 +156,16 @@ async def grade_resume(http_request: Request, request: MatchRequest):
 # ---------------------------
 # PDF Upload Endpoint
 # ---------------------------
+
 @app.post("/grade_resume_pdf/")
 async def grade_resume_pdf(
     request: Request,
     background_tasks: BackgroundTasks,
     job_description: str = Form(...),
-    resume_pdf: UploadFile = File(...)
+    resume_pdf: UploadFile = File(...),
 ):
-    # ---------------------------
-    # Rate limiting
-    # ---------------------------
     await rate_limiter.check_rate_limit(request)
 
-    # ---------------------------
-    # Analytics (non-blocking)
-    # ---------------------------
     background_tasks.add_task(
         log_event,
         "resume_analysis",
@@ -162,9 +173,9 @@ async def grade_resume_pdf(
         redis,
     )
 
-    # ---------------------------
-    # File extension validation
-    # ---------------------------
+    if len(job_description) > MAX_JOB_DESC_LENGTH:
+        raise HTTPException(status_code=400, detail="Job description too long.")
+
     if not resume_pdf.filename:
         raise HTTPException(status_code=400, detail="No filename provided")
 
@@ -172,12 +183,9 @@ async def grade_resume_pdf(
     if file_ext not in ALLOWED_EXTENSIONS:
         raise HTTPException(
             status_code=400,
-            detail=f"Invalid file type. Allowed: {', '.join(ALLOWED_EXTENSIONS)}"
+            detail=f"Invalid file type. Allowed: {', '.join(ALLOWED_EXTENSIONS)}",
         )
 
-    # ---------------------------
-    # Streamed file-size check
-    # ---------------------------
     file_size = 0
     chunk_size = 1024 * 1024  # 1MB
     chunks: list[bytes] = []
@@ -186,41 +194,21 @@ async def grade_resume_pdf(
         chunk = await resume_pdf.read(chunk_size)
         if not chunk:
             break
-
         file_size += len(chunk)
         if file_size > MAX_FILE_SIZE:
-            raise HTTPException(
-                status_code=413,
-                detail="File too large. Maximum size is 10MB."
-            )
-
+            raise HTTPException(status_code=413, detail="File too large. Maximum size is 10MB.")
         chunks.append(chunk)
 
     pdf_bytes = b"".join(chunks)
 
-    # ---------------------------
-    # Magic-byte validation
-    # ---------------------------
     if not pdf_bytes.startswith(b"%PDF"):
-        raise HTTPException(
-            status_code=400,
-            detail="Uploaded file is not a valid PDF."
-        )
+        raise HTTPException(status_code=400, detail="Uploaded file is not a valid PDF.")
 
-    # ---------------------------
-    # PDF text extraction
-    # ---------------------------
     resume_text = extract_text_from_pdf_bytes(pdf_bytes)
 
     if len(resume_text) > MAX_RESUME_TEXT_LENGTH:
-        raise HTTPException(
-            status_code=400,
-            detail="Resume text too long. Please submit a concise resume."
-        )
+        raise HTTPException(status_code=400, detail="Resume text too long. Please submit a concise resume.")
 
-    # ---------------------------
-    # Resume grading (with cache)
-    # ---------------------------
     cache_key = "llm_cache:" + hashlib.md5(
         (job_description + "||" + resume_text).encode()
     ).hexdigest()
@@ -245,17 +233,12 @@ async def grade_resume_pdf(
     return {
         "evaluation": evaluation,
         "keyword_score": keyword_score,
-        "resume_preview": resume_text[:800]
+        "resume_preview": resume_text[:800],
     }
 
 
 # ---------------------------
+# Static files (must be last)
 # ---------------------------
-# next i can add a cash for the llm calls so if the same prompt is sent again it returns the cached response
-# ---------------------------
-# need to get this done and uploaded before i start working on the frontend, so that i can test the caching functionality with the frontend as well
-# ----------------------------
-# finniched up the rate limiting
-# -----------------------------
-# once i add this im add a sign in page to get user count and give opin if they don't want to sign up just makea guest classS
-# idk
+
+app.mount("/", StaticFiles(directory=FRONTEND_DIR), name="static")
