@@ -80,8 +80,27 @@ app.add_middleware(
 # ---------------------------
 
 @app.get("/")
-def serve_frontend():
-    return FileResponse(FRONTEND_DIR / "resume_front.html")
+def serve_index():
+    return FileResponse(FRONTEND_DIR / "index.html")
+
+@app.get("/login")
+def serve_login():
+    return FileResponse(FRONTEND_DIR / "login.html")
+
+@app.get("/dashboard")
+def serve_dashboard():
+    return FileResponse(FRONTEND_DIR / "dashboard.html")
+
+@app.get("/grader")
+def serve_grader():
+    return FileResponse(FRONTEND_DIR / "grader.html")
+
+@app.get("/config")
+def get_config():
+    return {
+        "supabaseUrl": os.getenv("SUPABASE_URL", ""),
+        "supabaseAnonKey": os.getenv("SUPABASE_ANON_KEY", ""),
+    }
 
 
 # ---------------------------

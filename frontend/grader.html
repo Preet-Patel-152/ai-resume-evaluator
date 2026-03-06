@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Resume Grader — ResumeAI</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+    <!-- Nav -->
+    <nav class="nav">
+        <a href="/" class="nav-logo">ResumeAI</a>
+        <div class="nav-links">
+            <a href="/dashboard" class="nav-link">Dashboard</a>
+            <a href="/grader" class="nav-link nav-link-active">Grader</a>
+            <button class="btn btn-sm btn-ghost" onclick="logout()">Log Out</button>
+        </div>
+    </nav>
+
+    <div class="container">
+
+        <header>
+            <h1>AI Resume Analyzer</h1>
+            <p class="subtitle">Upload your resume and paste a job description to get an AI-powered match analysis.</p>
+        </header>
+
+        <!-- Form -->
+        <div class="card">
+            <form id="analyze-form" enctype="multipart/form-data">
+                <div class="field">
+                    <label for="resume">
+                        Resume (PDF)
+                        <span class="hint">Only .pdf files</span>
+                    </label>
+                    <input type="file" id="resume" name="resume" accept=".pdf" />
+                    <div id="file-name" class="file-name">No file selected.</div>
+                </div>
+
+                <div class="field">
+                    <label for="job-text">
+                        Job Description
+                        <span class="hint">Paste the full posting</span>
+                    </label>
+                    <textarea id="job-text" name="job_text" placeholder="Paste the job description here..."></textarea>
+                </div>
+
+                <div class="row">
+                    <button id="submit-btn" type="submit">Analyze Resume</button>
+                    <div id="status" class="status">Ready.</div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Results (hidden until first analysis) -->
+        <div id="results-section">
+
+            <!-- Skeleton loader -->
+            <div id="skeleton" style="display:none;">
+                <div class="card">
+                    <div style="display:flex; gap:28px; align-items:center;">
+                        <div class="skeleton sk-circle"></div>
+                        <div style="flex:1;">
+                            <div class="skeleton sk-line sk-short" style="height:20px; margin-bottom:14px;"></div>
+                            <div class="skeleton sk-line sk-full"></div>
+                            <div class="skeleton sk-line sk-med"></div>
+                            <div class="skeleton sk-line sk-full"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="skeleton sk-line sk-short" style="height:16px; margin-bottom:16px;"></div>
+                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                        <div class="skeleton" style="width:72px; height:26px; border-radius:100px;"></div>
+                        <div class="skeleton" style="width:90px; height:26px; border-radius:100px;"></div>
+                        <div class="skeleton" style="width:60px; height:26px; border-radius:100px;"></div>
+                        <div class="skeleton" style="width:84px; height:26px; border-radius:100px;"></div>
+                        <div class="skeleton" style="width:68px; height:26px; border-radius:100px;"></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px;">
+                        <div>
+                            <div class="skeleton sk-line sk-short" style="height:15px; margin-bottom:14px;"></div>
+                            <div class="skeleton sk-line sk-full"></div>
+                            <div class="skeleton sk-line sk-med"></div>
+                            <div class="skeleton sk-line sk-full"></div>
+                        </div>
+                        <div>
+                            <div class="skeleton sk-line sk-short" style="height:15px; margin-bottom:14px;"></div>
+                            <div class="skeleton sk-line sk-full"></div>
+                            <div class="skeleton sk-line sk-med"></div>
+                            <div class="skeleton sk-line sk-full"></div>
+                        </div>
+                        <div>
+                            <div class="skeleton sk-line sk-short" style="height:15px; margin-bottom:14px;"></div>
+                            <div class="skeleton sk-line sk-full"></div>
+                            <div class="skeleton sk-line sk-med"></div>
+                            <div class="skeleton sk-line sk-full"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actual results -->
+            <div id="actual-results" style="display:none;">
+
+                <!-- Score + summary -->
+                <div class="card">
+                    <div class="score-card">
+                        <div class="gauge-wrap">
+                            <svg width="120" height="120" viewBox="0 0 120 120">
+                                <circle cx="60" cy="60" r="54" fill="none" stroke="#e5e7eb" stroke-width="9" />
+                                <circle id="gauge-arc" cx="60" cy="60" r="54" fill="none" stroke="#6366f1"
+                                    stroke-width="9" stroke-linecap="round"
+                                    stroke-dasharray="339.3" stroke-dashoffset="339.3" />
+                            </svg>
+                            <div class="gauge-text">
+                                <span id="gauge-pct" class="gauge-pct">0%</span>
+                                <span class="gauge-sublabel">Match</span>
+                            </div>
+                        </div>
+                        <div class="score-info">
+                            <div id="score-verdict" class="score-verdict"></div>
+                            <p id="score-summary" class="score-summary-text"></p>
+                        </div>
+                        <button class="btn-outline" id="copy-btn">Copy Results</button>
+                    </div>
+                </div>
+
+                <!-- Keyword skills -->
+                <div class="card">
+                    <div class="card-label">Keyword Skill Match</div>
+                    <div class="skills-grid">
+                        <div class="skills-col matched">
+                            <h3>Matched Skills</h3>
+                            <div id="matched-chips" class="chips"></div>
+                        </div>
+                        <div class="skills-col missing">
+                            <h3>Missing Skills</h3>
+                            <div id="missing-chips" class="chips"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Strengths / Gaps / Improvements -->
+                <div class="card">
+                    <div class="details-grid">
+                        <div class="detail-col strengths">
+                            <h3>Strengths</h3>
+                            <ul id="strengths-list"></ul>
+                        </div>
+                        <div class="detail-col gaps">
+                            <h3>Gaps</h3>
+                            <ul id="gaps-list"></ul>
+                        </div>
+                        <div class="detail-col improvements">
+                            <h3>Improvements</h3>
+                            <ul id="improvements-list"></ul>
+                        </div>
+                    </div>
+                    <div class="footer-note">Results are advisory. Always tailor your resume for each role.</div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="auth.js"></script>
+    <script src="app.js"></script>
+    <script>
+        initSupabase().then(requireAuth);
+    </script>
+</body>
+</html>

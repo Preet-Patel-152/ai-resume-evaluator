@@ -1,7 +1,5 @@
 const CIRCUMFERENCE = 2 * Math.PI * 54; // matches SVG r=54 → 339.3
-const API_URL = window.location.port === "5500" || window.location.port === "5501"
-    ? "http://localhost:8000/grade_resume_pdf/"
-    : "/grade_resume_pdf/";
+const API_URL = "/grade_resume_pdf/";
 
 const form        = document.getElementById("analyze-form");
 const resumeInput = document.getElementById("resume");

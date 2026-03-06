@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Resume Analyzer</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body class="landing-body">
+
+    <!-- Nav -->
+    <nav class="nav">
+        <span class="nav-logo">ResumeAI</span>
+        <div class="nav-links">
+            <a href="/login" class="nav-link">Log In</a>
+            <a href="/login" class="btn btn-sm">Get Started</a>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="hero-inner">
+            <div class="hero-badge">AI-Powered</div>
+            <h1 class="hero-title">Get your resume<br>in front of the right jobs</h1>
+            <p class="hero-sub">Upload your resume, paste a job description, and get an instant AI-powered match score with actionable feedback — then track every application in one place.</p>
+            <div class="hero-actions">
+                <a href="/login" class="btn btn-lg">Get Started Free</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- How it works -->
+    <section class="how-section">
+        <div class="how-inner">
+            <h2 class="how-title">How it works</h2>
+            <div class="how-grid">
+                <div class="how-card">
+                    <div class="how-num">1</div>
+                    <h3>Upload your resume</h3>
+                    <p>Drop in your PDF resume. We extract the text and analyze your skills, experience, and keywords.</p>
+                </div>
+                <div class="how-card">
+                    <div class="how-num">2</div>
+                    <h3>Paste a job description</h3>
+                    <p>Copy the full job posting. Our AI compares it against your resume and identifies gaps and strengths.</p>
+                </div>
+                <div class="how-card">
+                    <div class="how-num">3</div>
+                    <h3>Track your applications</h3>
+                    <p>Save each analysis to your personal job tracker. Monitor status from Applied through Offer.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="landing-footer">
+        <p>Built with FastAPI &amp; OpenAI · <a href="/login">Sign up free</a></p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="auth.js"></script>
+    <script>
+        // Redirect logged-in users straight to dashboard
+        initSupabase().then(redirectIfLoggedIn);
+    </script>
+</body>
+</html>

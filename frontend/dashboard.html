@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard — ResumeAI</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+    <!-- Nav -->
+    <nav class="nav">
+        <a href="/" class="nav-logo">ResumeAI</a>
+        <div class="nav-links">
+            <a href="/dashboard" class="nav-link nav-link-active">Dashboard</a>
+            <a href="/grader" class="nav-link">Grader</a>
+            <button class="btn btn-sm btn-ghost" onclick="logout()">Log Out</button>
+        </div>
+    </nav>
+
+    <div class="container">
+
+        <!-- Welcome header -->
+        <header>
+            <h1 id="welcome-msg">Welcome back</h1>
+            <p class="subtitle">Use the AI grader to analyze your resume against any job description.</p>
+        </header>
+
+        <!-- Quick action card -->
+        <div class="dash-grid">
+            <div class="card dash-card">
+                <div class="dash-icon">&#128196;</div>
+                <h3>Resume Grader</h3>
+                <p>Upload your resume PDF and paste a job description to get an instant AI match score with skill breakdown and improvement tips.</p>
+                <a href="/grader" class="btn" style="display:inline-block; margin-top:12px; text-decoration:none;">Go to Grader</a>
+            </div>
+
+            <div class="card dash-card dash-card-muted">
+                <div class="dash-icon">&#128202;</div>
+                <h3>Job Tracker <span class="coming-soon">Coming Soon</span></h3>
+                <p>Track every job application in one place — company, role, status, and your match score. Stay organized across your whole job search.</p>
+            </div>
+        </div>
+
+        <!-- Tips card -->
+        <div class="card" style="margin-top:18px;">
+            <div class="card-label">Tips for a better score</div>
+            <ul class="tips-list">
+                <li>Mirror the exact keywords from the job description in your resume.</li>
+                <li>Quantify achievements — "Increased performance by 30%" beats "Improved performance".</li>
+                <li>Tailor a fresh copy of your resume for each role you apply to.</li>
+                <li>Add missing skills to a "Currently Learning" or "Projects" section.</li>
+            </ul>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="auth.js"></script>
+    <script>
+        initSupabase().then(async () => {
+            const user = await requireAuth();
+            if (user) {
+                const name = user.email.split("@")[0];
+                document.getElementById("welcome-msg").textContent = `Welcome back, ${name}`;
+            }
+        });
+    </script>
+</body>
+</html>

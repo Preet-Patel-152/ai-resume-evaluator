@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sign In — ResumeAI</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+    <nav class="nav">
+        <a href="/" class="nav-logo">ResumeAI</a>
+        <div class="nav-links">
+            <a href="/" class="nav-link">Home</a>
+        </div>
+    </nav>
+
+    <div class="auth-wrap">
+        <div class="auth-card">
+            <h2 class="auth-title">Welcome</h2>
+
+            <!-- Tab toggle -->
+            <div class="auth-tabs">
+                <button class="auth-tab active" id="tab-login" onclick="switchTab('login')">Log In</button>
+                <button class="auth-tab" id="tab-signup" onclick="switchTab('signup')">Sign Up</button>
+            </div>
+
+            <!-- Error / success message -->
+            <div id="auth-msg" class="auth-msg" style="display:none;"></div>
+
+            <!-- Form -->
+            <form id="auth-form">
+                <div class="field">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" placeholder="you@example.com" required />
+                </div>
+                <div class="field">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" placeholder="••••••••" required />
+                </div>
+                <button type="submit" id="auth-btn" style="width:100%; margin-top:8px;">Log In</button>
+            </form>
+
+            <p class="auth-switch">
+                <span id="switch-text">Don't have an account?</span>
+                <a href="#" id="switch-link" onclick="switchTab('signup'); return false;">Sign Up</a>
+            </p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="auth.js"></script>
+    <script>
+        let mode = "login";
+
+        function switchTab(newMode) {
+            mode = newMode;
+            const isLogin = mode === "login";
+            document.getElementById("tab-login").classList.toggle("active", isLogin);
+            document.getElementById("tab-signup").classList.toggle("active", !isLogin);
+            document.getElementById("auth-btn").textContent = isLogin ? "Log In" : "Sign Up";
+            document.getElementById("switch-text").textContent = isLogin ? "Don't have an account?" : "Already have an account?";
+            document.getElementById("switch-link").textContent = isLogin ? "Sign Up" : "Log In";
+            document.getElementById("switch-link").onclick = () => { switchTab(isLogin ? "signup" : "login"); return false; };
+            hideMsg();
+        }
+
+        function showMsg(text, isError) {
+            const el = document.getElementById("auth-msg");
+            el.textContent = text;
+            el.className = "auth-msg " + (isError ? "auth-msg-error" : "auth-msg-success");
+            el.style.display = "block";
+        }
+
+        function hideMsg() {
+            document.getElementById("auth-msg").style.display = "none";
+        }
+
+        document.getElementById("auth-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById("auth-btn");
+            btn.disabled = true;
+            btn.textContent = "Please wait…";
+            hideMsg();
+
+            const sb = await getSupabase();
+            const email = document.getElementById("email").value.trim();
+            const password = document.getElementById("password").value;
+
+            let error;
+            if (mode === "login") {
+                ({ error } = await sb.auth.signInWithPassword({ email, password }));
+            } else {
+                const { error: signUpError } = await sb.auth.signUp({ email, password });
+                error = signUpError;
+                if (!signUpError) {
+                    showMsg("Account created! Check your email to confirm, then log in.", false);
+                    switchTab("login");
+                    btn.disabled = false;
+                    btn.textContent = "Log In";
+                    return;
+                }
+            }
+
+            if (error) {
+                showMsg(error.message, true);
+                btn.disabled = false;
+                btn.textContent = mode === "login" ? "Log In" : "Sign Up";
+            } else {
+                window.location.href = "/dashboard";
+            }
+        });
+
+        // Redirect if already logged in
+        initSupabase().then(redirectIfLoggedIn);
+    </script>
+</body>
+</html>
