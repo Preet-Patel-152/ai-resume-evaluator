@@ -9,13 +9,11 @@
 
 <body>
 
-    <!-- Nav -->
+    <!-- Nav (links swapped in by JS based on auth state) -->
     <nav class="nav">
         <a href="/" class="nav-logo">ResumeAI</a>
-        <div class="nav-links">
-            <a href="/dashboard" class="nav-link">Dashboard</a>
-            <a href="/grader" class="nav-link nav-link-active">Grader</a>
-            <button class="btn btn-sm btn-ghost" onclick="logout()">Log Out</button>
+        <div class="nav-links" id="nav-links">
+            <!-- filled by JS -->
         </div>
     </nav>
 
@@ -171,7 +169,22 @@
     <script src="auth.js"></script>
     <script src="app.js"></script>
     <script>
-        initSupabase().then(requireAuth);
+        initSupabase().then(async () => {
+            const sb = await getSupabase();
+            const { data: { user } } = await sb.auth.getUser();
+            const nav = document.getElementById("nav-links");
+            if (user) {
+                nav.innerHTML = `
+                    <a href="/dashboard" class="nav-link">Dashboard</a>
+                    <a href="/grader" class="nav-link nav-link-active">Grader</a>
+                    <button class="btn btn-sm btn-ghost" onclick="logout()">Log Out</button>`;
+            } else {
+                nav.innerHTML = `
+                    <a href="/grader" class="nav-link nav-link-active">Grader</a>
+                    <a href="/login" class="nav-link">Log In</a>
+                    <a href="/login" class="btn btn-sm">Sign Up</a>`;
+            }
+        });
     </script>
 </body>
 </html>

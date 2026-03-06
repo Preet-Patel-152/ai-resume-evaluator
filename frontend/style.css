@@ -469,6 +469,13 @@ button:disabled { opacity: 0.65; cursor: not-allowed; }
 
 .btn-lg { padding: 14px 28px; font-size: 16px; }
 
+.btn-ghost-white {
+    background: transparent;
+    color: #fff;
+    border: 2px solid rgba(255,255,255,0.6);
+}
+.btn-ghost-white:hover { background: rgba(255,255,255,0.12); border-color: #fff; }
+
 /* How it works section */
 .how-section {
     background: rgba(0, 0, 0, 0.35);
