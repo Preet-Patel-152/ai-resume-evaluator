@@ -22,15 +22,18 @@ from .middleware.redis_rate_limiter import RedisRateLimiter
 from .services.redis_client import get_redis
 
 
-MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB — reject files larger than this before reading them
 ALLOWED_EXTENSIONS = {'.pdf'}
-MAX_RESUME_TEXT_LENGTH = 50_000   # ~10 pages
-MAX_JOB_DESC_LENGTH = 20_000
+MAX_RESUME_TEXT_LENGTH = 50_000   # ~10 pages of text — prevents huge prompts being sent to OpenAI
+MAX_JOB_DESC_LENGTH = 20_000      # same reason — keeps API costs predictable
 
+# Absolute path to the frontend/ folder so FastAPI can serve HTML files
 FRONTEND_DIR = Path(__file__).resolve().parents[2] / "frontend"
 
+# Single shared Redis connection used for both rate limiting and caching
 redis = get_redis()
 
+# Limit each IP to 10 requests per hour to prevent API abuse and control OpenAI costs
 rate_limiter = RedisRateLimiter(
     redis=redis,
     max_requests=int(os.getenv("RATE_LIMIT_MAX", "10")),
@@ -97,6 +100,9 @@ def serve_grader():
 
 @app.get("/config")
 def get_config():
+    # Serves Supabase credentials from Railway env vars to the browser.
+    # The anon key is safe to expose — Supabase designed it for client-side use.
+    # Serving via this endpoint keeps keys out of committed JS files.
     return {
         "supabaseUrl": os.getenv("SUPABASE_URL", ""),
         "supabaseAnonKey": os.getenv("SUPABASE_ANON_KEY", ""),
@@ -206,9 +212,11 @@ async def grade_resume_pdf(
         )
 
     file_size = 0
-    chunk_size = 1024 * 1024  # 1MB
+    chunk_size = 1024 * 1024  # Read 1MB at a time instead of loading the whole file at once
     chunks: list[bytes] = []
 
+    # Stream the file in chunks so we can reject oversized files early
+    # without holding the entire upload in memory first
     while True:
         chunk = await resume_pdf.read(chunk_size)
         if not chunk:
@@ -220,6 +228,8 @@ async def grade_resume_pdf(
 
     pdf_bytes = b"".join(chunks)
 
+    # Check the first 4 bytes — every valid PDF starts with "%PDF"
+    # This catches users who rename a .docx or image to .pdf
     if not pdf_bytes.startswith(b"%PDF"):
         raise HTTPException(status_code=400, detail="Uploaded file is not a valid PDF.")
 
@@ -228,6 +238,8 @@ async def grade_resume_pdf(
     if len(resume_text) > MAX_RESUME_TEXT_LENGTH:
         raise HTTPException(status_code=400, detail="Resume text too long. Please submit a concise resume.")
 
+    # Build a cache key by hashing the job description + resume text together.
+    # Same inputs = same hash = return cached result instead of calling OpenAI again.
     cache_key = "llm_cache:" + hashlib.md5(
         (job_description + "||" + resume_text).encode()
     ).hexdigest()
@@ -236,23 +248,25 @@ async def grade_resume_pdf(
     try:
         cached = await redis.get(cache_key)
         if cached:
-            evaluation = json.loads(cached)
+            evaluation = json.loads(cached)  # cache hit — skip OpenAI call
     except Exception:
-        pass
+        pass  # if Redis is down, just continue without caching
 
     if evaluation is None:
+        # Cache miss — call OpenAI to grade the resume
         evaluation = grade_resume_against_job(job_description, resume_text)
         try:
-            await redis.set(cache_key, json.dumps(evaluation), ex=86400)
+            await redis.set(cache_key, json.dumps(evaluation), ex=86400)  # cache for 24 hours
         except Exception:
             pass
 
+    # keyword_score runs locally (no API call) — counts matched/missing skills
     keyword_score = score_resume(resume_text, job_description)
 
     return {
         "evaluation": evaluation,
         "keyword_score": keyword_score,
-        "resume_preview": resume_text[:800],
+        "resume_preview": resume_text[:800],  # first 800 chars shown in UI as a preview
     }
 
 
