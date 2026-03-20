@@ -119,7 +119,12 @@ def health():
 
 
 @app.get("/stats")
-async def get_stats():
+async def get_stats(key: str = ""):
+    # Require a secret key so this endpoint isn't publicly readable.
+    # Set STATS_SECRET in Railway env vars. Access via /stats?key=yoursecret
+    stats_secret = os.getenv("STATS_SECRET", "")
+    if not stats_secret or key != stats_secret:
+        raise HTTPException(status_code=403, detail="Forbidden")
     try:
         total = await redis.get("stats:total_requests")
         unique = await redis.pfcount("stats:unique_ips")
