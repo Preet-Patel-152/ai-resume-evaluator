@@ -118,6 +118,40 @@ def health():
     return {"status": "ok"}
 
 
+# ---------------------------
+# AI Kill Switch
+# ---------------------------
+
+async def ai_is_enabled() -> bool:
+    """Returns False if the kill switch has been triggered, True otherwise."""
+    try:
+        val = await redis.get("killswitch:ai_enabled")
+        # If the key doesn't exist yet, treat AI as enabled (default on)
+        return val != b"0"
+    except Exception:
+        return True  # if Redis is down, don't block requests
+
+
+@app.post("/admin/ai/disable")
+async def disable_ai(key: str = ""):
+    """Instantly stops all OpenAI API calls. Use if costs spike unexpectedly."""
+    secret = os.getenv("STATS_SECRET", "")
+    if not secret or key != secret:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    await redis.set("killswitch:ai_enabled", "0")
+    return {"ai_enabled": False, "message": "AI calls disabled. Users will see a maintenance message."}
+
+
+@app.post("/admin/ai/enable")
+async def enable_ai(key: str = ""):
+    """Re-enables OpenAI API calls after they were disabled."""
+    secret = os.getenv("STATS_SECRET", "")
+    if not secret or key != secret:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    await redis.set("killswitch:ai_enabled", "1")
+    return {"ai_enabled": True, "message": "AI calls re-enabled."}
+
+
 @app.get("/stats")
 async def get_stats(key: str = ""):
     # Require a secret key so this endpoint isn't publicly readable.
@@ -170,6 +204,8 @@ async def grade_resume(http_request: Request, request: MatchRequest):
         pass
 
     if evaluation is None:
+        if not await ai_is_enabled():
+            raise HTTPException(status_code=503, detail="AI grading is temporarily unavailable. Please try again later.")
         evaluation = grade_resume_against_job(
             job_description=request.job_description,
             resume_text=request.resume_text,
@@ -258,7 +294,9 @@ async def grade_resume_pdf(
         pass  # if Redis is down, just continue without caching
 
     if evaluation is None:
-        # Cache miss — call OpenAI to grade the resume
+        # Cache miss — check kill switch before calling OpenAI
+        if not await ai_is_enabled():
+            raise HTTPException(status_code=503, detail="AI grading is temporarily unavailable. Please try again later.")
         evaluation = grade_resume_against_job(job_description, resume_text)
         try:
             await redis.set(cache_key, json.dumps(evaluation), ex=86400)  # cache for 24 hours
